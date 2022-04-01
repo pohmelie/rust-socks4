@@ -5,6 +5,7 @@ use std::time::Duration;
 use std::thread;
 use std::io::Read;
 use std::io::Write;
+use std::sync::Arc;
 
 
 #[derive(Debug)]
@@ -49,7 +50,7 @@ impl Server {
         }
     }
 
-    fn _sink(mut read_stream: &TcpStream, mut write_stream: &TcpStream) {
+    fn _sink(read_stream: Arc<TcpStream>, write_stream: Arc<TcpStream>) {
         let mut buf = [0, 1024];
         loop {
             let count = read_stream.read(&mut buf).unwrap();
@@ -63,14 +64,20 @@ impl Server {
         }
     }
 
-    fn try_sink <'a>(client_stream: TcpStream, ipv4: Ipv4Addr, port: u16) {
+    fn try_sink(client_stream: TcpStream, ipv4: Ipv4Addr, port: u16) {
         match TcpStream::connect((ipv4, port)) {
             Ok(target_stream) => {
                 Server::_configure_stream(&target_stream);
-                let client_stream: &'a TcpStream = &client_stream;
-                let target_stream: &'a TcpStream = &target_stream;
-                let h1 = thread::spawn(|| Server::_sink(client_stream, target_stream));
-                let h2 = thread::spawn(|| Server::_sink(target_stream, client_stream));
+                let client_stream_arc = Arc::new(client_stream);
+                let target_stream_arc = Arc::new(target_stream);
+                let h1 = thread::spawn(move || Server::_sink(
+                    Arc::clone(&client_stream_arc),
+                    Arc::clone(&target_stream_arc),
+                ));
+                let h2 = thread::spawn(move || Server::_sink(
+                    Arc::clone(&target_stream_arc),
+                    Arc::clone(&client_stream_arc),
+                ));
 
                 h1.join().unwrap();
                 h2.join().unwrap();
