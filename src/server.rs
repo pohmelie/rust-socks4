@@ -1,11 +1,10 @@
 use super::protocol::Socks4IO;
 
-use std::net::{TcpListener, Shutdown, TcpStream, Ipv4Addr};
-use std::time::Duration;
-use std::thread;
 use std::io::Read;
 use std::io::Write;
-
+use std::net::{Ipv4Addr, Shutdown, TcpListener, TcpStream};
+use std::thread;
+use std::time::Duration;
 
 #[derive(Debug)]
 pub struct Server {
@@ -13,14 +12,12 @@ pub struct Server {
     pub port: u16,
 }
 
-
 impl Server {
-
     pub fn new(host: String, port: u16) -> Self {
         return Self {
             host: host,
             port: port,
-        }
+        };
     }
 
     pub fn serve_forever(self) {
@@ -34,7 +31,9 @@ impl Server {
     }
 
     fn _configure_stream(stream: &TcpStream) {
-        stream.set_write_timeout(Some(Duration::from_secs(30))).expect("set write timeout failed");
+        stream
+            .set_write_timeout(Some(Duration::from_secs(30)))
+            .expect("set write timeout failed");
     }
 
     fn handle_connection(client_stream: TcpStream) {
@@ -44,21 +43,28 @@ impl Server {
             Ok((ipv4, port)) => {
                 println!("socks4 handshake ok");
                 Server::try_sink(client_stream, ipv4, port);
-            },
+            }
             Err(message) => {
                 println!("{}", message);
-                client_stream.shutdown(Shutdown::Both).expect("client shutdown failed");
+                client_stream
+                    .shutdown(Shutdown::Both)
+                    .expect("client shutdown failed");
             }
         }
     }
 
-    fn _sink<'a> (mut read_stream: &'a TcpStream, mut write_stream: &'a TcpStream) -> Result<usize, String> {
+    fn _sink<'a>(
+        mut read_stream: &'a TcpStream,
+        mut write_stream: &'a TcpStream,
+    ) -> Result<usize, String> {
         let mut buf: Vec<u8> = vec![0; 1024];
         loop {
-            read_stream.set_read_timeout(Some(Duration::from_millis(100))).expect("set read timeout failed");
+            read_stream
+                .set_read_timeout(Some(Duration::from_millis(100)))
+                .expect("set read timeout failed");
             let result = read_stream.read(&mut buf);
             if result.is_err() {
-                return Err("read timeout".to_string())
+                return Err("read timeout".to_string());
             }
             let read_count = result.unwrap();
             let write_count = write_stream.write(&buf[..read_count]).unwrap();
@@ -85,12 +91,18 @@ impl Server {
                     }
                 }
 
-                client_stream.shutdown(Shutdown::Both).expect("client shutdown failed");
-                target_stream.shutdown(Shutdown::Both).expect("target shutdown faield");
+                client_stream
+                    .shutdown(Shutdown::Both)
+                    .expect("client shutdown failed");
+                target_stream
+                    .shutdown(Shutdown::Both)
+                    .expect("target shutdown faield");
                 println!("both connection closed");
-            },
+            }
             Err(_) => {
-                client_stream.shutdown(Shutdown::Both).expect("target shutdown faield");
+                client_stream
+                    .shutdown(Shutdown::Both)
+                    .expect("target shutdown faield");
                 println!("can't connect to target {}:{}", ipv4, port);
             }
         }
