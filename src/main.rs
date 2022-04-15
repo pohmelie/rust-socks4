@@ -11,8 +11,9 @@ struct Args {
     port: u16,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
     let server = Server::new(args.host, args.port);
-    server.serve_forever();
+    server.serve_forever().await.expect("server forever endend");
 }

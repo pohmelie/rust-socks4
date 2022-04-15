@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 clap = { version = "3.1.6", features = ["derive"] }
 structure = "0.1"
+tokio = { version = "1", features = ["full"] }
