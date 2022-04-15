@@ -2,9 +2,8 @@ use super::structure;
 use std::error::Error;
 use std::net::Ipv4Addr;
 
-use tokio::net::TcpStream;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
+use tokio::net::TcpStream;
 
 const TCP_CONNECT_COMMAND_CODE: u8 = 0x01;
 const TCP_CONNECT_RESPONSE_OK: u8 = 0x5a;
@@ -60,7 +59,7 @@ impl<'a> Socks4IO<'a> {
             }
             vector.push(ch);
         }
-        return Ok(String::from_utf8(vector)?)
+        return Ok(String::from_utf8(vector)?);
     }
 
     fn ipv4_from_vector(data: &Vec<u8>) -> Ipv4Addr {
@@ -79,11 +78,13 @@ impl<'a> Socks4IO<'a> {
 
         if info.command != TCP_CONNECT_COMMAND_CODE {
             self.write_socks_response(TCP_CONNECT_RESPONSE_BAD)
-            .await
-            .expect("info action is not equal to tcp_connect");
+                .await
+                .expect("info action is not equal to tcp_connect");
         }
 
-        self.read_c_string().await.expect("can't read closing c-string");
+        self.read_c_string()
+            .await
+            .expect("can't read closing c-string");
 
         if info.ipv4.len() != 4 {
             self.write_socks_response(TCP_CONNECT_RESPONSE_BAD)
@@ -101,26 +102,44 @@ impl<'a> Socks4IO<'a> {
     }
 
     // client part
-    pub async fn make_client_tcp_stream(socks4_host: Ipv4Addr, socks4_port: u16,
-                                        target_host: Ipv4Addr, target_port: u16) -> Result<TcpStream, String> {
-        let mut stream = TcpStream::connect((socks4_host, socks4_port)).await.expect("can't connect to socks");
+    pub async fn make_client_tcp_stream(
+        socks4_host: Ipv4Addr,
+        socks4_port: u16,
+        target_host: Ipv4Addr,
+        target_port: u16,
+    ) -> Result<TcpStream, String> {
+        let mut stream = TcpStream::connect((socks4_host, socks4_port))
+            .await
+            .expect("can't connect to socks");
         let s = structure!("BBH4s");
-        let mut buf: Vec<u8> = s.pack(
-            4,
-            TCP_CONNECT_COMMAND_CODE,
-            target_port,
-            &target_host.octets()).expect("can't pack request");
-        buf.push(0);  // empty c-string
+        let mut buf: Vec<u8> = s
+            .pack(
+                4,
+                TCP_CONNECT_COMMAND_CODE,
+                target_port,
+                &target_host.octets(),
+            )
+            .expect("can't pack request");
+        buf.push(0); // empty c-string
 
-        stream.write_all(&mut buf).await.expect("can't wrate request");
+        stream
+            .write_all(&mut buf)
+            .await
+            .expect("can't wrate request");
 
         let mut buf: Vec<u8> = [0; 8].to_vec();
-        let n = stream.read_exact(&mut buf).await.expect("can't read response");
+        let n = stream
+            .read_exact(&mut buf)
+            .await
+            .expect("can't read response");
         if n != 8 {
-            return Err(format!("response lenght is not equal to 8, but {}", n))
+            return Err(format!("response lenght is not equal to 8, but {}", n));
         }
         if buf[1] != TCP_CONNECT_RESPONSE_OK {
-            return Err("socks server repotrts that connection to remote server can't be established".to_string());
+            return Err(
+                "socks server repotrts that connection to remote server can't be established"
+                    .to_string(),
+            );
         }
 
         return Ok(stream);

@@ -3,11 +3,10 @@ use super::protocol::Socks4IO;
 use std::error::Error;
 use std::net::Ipv4Addr;
 
-use tokio::time::{timeout, Duration};
-use tokio::net::{TcpListener, TcpStream};
-use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-
+use tokio::net::tcp::{OwnedReadHalf, OwnedWriteHalf};
+use tokio::net::{TcpListener, TcpStream};
+use tokio::time::{timeout, Duration};
 
 #[derive(Debug)]
 pub struct Server {
@@ -33,7 +32,7 @@ impl Server {
             tokio::spawn(async move {
                 Server::handle_connection(client_socket).await;
             });
-        };
+        }
     }
 
     async fn handle_connection(client_stream: TcpStream) {
@@ -43,22 +42,20 @@ impl Server {
     }
 
     async fn handshake(mut client_stream: TcpStream) -> Result<(TcpStream, Ipv4Addr, u16), String> {
-        let handshake_future = Socks4IO::new(& mut client_stream).make_server_handshake();
+        let handshake_future = Socks4IO::new(&mut client_stream).make_server_handshake();
         let handshake_timeout_result = timeout(Duration::from_secs(5), handshake_future).await;
         match handshake_timeout_result {
-            Ok(handshake_result) => {
-                match handshake_result {
-                    Ok((ipv4, port)) => {
-                        return Ok((client_stream, ipv4, port));
-                    }
-                    Err(message) => {
-                        return Err(message);
-                    }
+            Ok(handshake_result) => match handshake_result {
+                Ok((ipv4, port)) => {
+                    return Ok((client_stream, ipv4, port));
                 }
-            }
+                Err(message) => {
+                    return Err(message);
+                }
+            },
             Err(_) => {
                 return Err("socks4 handshake timeout elapsed".to_string());
-            },
+            }
         }
     }
 
@@ -81,12 +78,19 @@ impl Server {
             }
             Err(message) => {
                 println!("{}", message);
-                client_stream.shutdown().await.expect("client socket shutdown failed");
+                client_stream
+                    .shutdown()
+                    .await
+                    .expect("client socket shutdown failed");
             }
         }
     }
 
-    async fn _sink(name: String, mut reader: OwnedReadHalf, mut writer: OwnedWriteHalf) -> Result<(), Box<dyn Error>> {
+    async fn _sink(
+        name: String,
+        mut reader: OwnedReadHalf,
+        mut writer: OwnedWriteHalf,
+    ) -> Result<(), Box<dyn Error>> {
         let mut b1 = [0; 8192];
         let mut b2 = [0; 8192];
         loop {

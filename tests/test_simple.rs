@@ -1,4 +1,4 @@
-use socks4::{inc, dec};
+use socks4::{dec, inc};
 
 #[test]
 fn test_inc_dec() {
