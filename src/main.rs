@@ -1,6 +1,5 @@
-use socks4::server::Server;
-
 use clap::Parser;
+use socks4::server::Server;
 
 #[derive(Parser, Debug)]
 #[clap(about = "Simple socks4 server", long_about = None)]
