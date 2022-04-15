@@ -107,10 +107,9 @@ impl<'a> Socks4IO<'a> {
         socks4_port: u16,
         target_host: Ipv4Addr,
         target_port: u16,
-    ) -> Result<TcpStream, String> {
+    ) -> Result<TcpStream, Box<dyn Error>> {
         let mut stream = TcpStream::connect((socks4_host, socks4_port))
-            .await
-            .expect("can't connect to socks");
+            .await?;
         let s = structure!("BBH4s");
         let mut buf: Vec<u8> = s
             .pack(
@@ -118,28 +117,24 @@ impl<'a> Socks4IO<'a> {
                 TCP_CONNECT_COMMAND_CODE,
                 target_port,
                 &target_host.octets(),
-            )
-            .expect("can't pack request");
+            )?;
+
         buf.push(0); // empty c-string
 
         stream
             .write_all(&mut buf)
-            .await
-            .expect("can't wrate request");
+            .await?;
 
         let mut buf: Vec<u8> = [0; 8].to_vec();
         let n = stream
             .read_exact(&mut buf)
-            .await
-            .expect("can't read response");
+            .await?;
+
         if n != 8 {
-            return Err(format!("response lenght is not equal to 8, but {}", n));
+            panic!("response length is not equal to 8");
         }
         if buf[1] != TCP_CONNECT_RESPONSE_OK {
-            return Err(
-                "socks server repotrts that connection to remote server can't be established"
-                    .to_string(),
-            );
+            panic!("socks server repotrts that connection to remote server can't be established");
         }
 
         return Ok(stream);
