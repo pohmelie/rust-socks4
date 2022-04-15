@@ -3,10 +3,9 @@ use std::net::Ipv4Addr;
 use socks4::client;
 use socks4::server::Server;
 
-use tokio::net::TcpListener;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::TcpListener;
 use tokio::time;
-
 
 async fn one_shot_echo_server(port: u16) {
     let address = format!("{}:{}", "127.0.0.1", port);
@@ -24,7 +23,9 @@ async fn test_success_case() {
         one_shot_echo_server(8000).await;
     });
     tokio::spawn(async {
-        Server::new("127.0.0.1".to_string(), 1080).serve_forever().await;
+        Server::new("127.0.0.1".to_string(), 1080)
+            .serve_forever()
+            .await;
     });
 
     for _ in 1..10 {
@@ -54,5 +55,4 @@ async fn test_success_case() {
         assert_eq!(buf1, buf2);
         break;
     }
-
 }

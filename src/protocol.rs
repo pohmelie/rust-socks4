@@ -108,27 +108,21 @@ impl<'a> Socks4IO<'a> {
         target_host: Ipv4Addr,
         target_port: u16,
     ) -> Result<TcpStream, Box<dyn Error>> {
-        let mut stream = TcpStream::connect((socks4_host, socks4_port))
-            .await?;
+        let mut stream = TcpStream::connect((socks4_host, socks4_port)).await?;
         let s = structure!("BBH4s");
-        let mut buf: Vec<u8> = s
-            .pack(
-                4,
-                TCP_CONNECT_COMMAND_CODE,
-                target_port,
-                &target_host.octets(),
-            )?;
+        let mut buf: Vec<u8> = s.pack(
+            4,
+            TCP_CONNECT_COMMAND_CODE,
+            target_port,
+            &target_host.octets(),
+        )?;
 
         buf.push(0); // empty c-string
 
-        stream
-            .write_all(&mut buf)
-            .await?;
+        stream.write_all(&mut buf).await?;
 
         let mut buf: Vec<u8> = [0; 8].to_vec();
-        let n = stream
-            .read_exact(&mut buf)
-            .await?;
+        let n = stream.read_exact(&mut buf).await?;
 
         if n != 8 {
             panic!("response length is not equal to 8");

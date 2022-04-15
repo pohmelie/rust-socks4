@@ -1,7 +1,7 @@
 use super::protocol::Socks4IO;
 
-use std::net::Ipv4Addr;
 use std::error::Error;
+use std::net::Ipv4Addr;
 
 use tokio::net::TcpStream;
 
